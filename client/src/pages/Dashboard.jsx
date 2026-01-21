@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { summarizeText } from "../lib/summarize";
+
 
 export default function Dashboard() {
   const [notes, setNotes] = useState([]);
@@ -22,6 +24,38 @@ export default function Dashboard() {
 
     setNotes(data || []);
   };
+
+  const summarizeNote = async (note) => {
+    try {
+      const summary = await summarizeText(note.content);
+
+      await supabase
+        .from("notes")
+        .update({ summary })
+        .eq("id", note.id);
+
+      fetchNotes();
+    } catch (err) {
+  console.error("Summarize error 👉", err);
+
+  alert(
+    err.message.includes("loading")
+      ? "AI model is loading. Please wait 10–20 seconds and click Summarize again."
+      : "AI summarization failed. Using fallback summary."
+  );
+
+  const fallbackSummary =
+    note.content.split(".").slice(0, 2).join(".") + ".";
+
+  await supabase
+    .from("notes")
+    .update({ summary: fallbackSummary })
+    .eq("id", note.id);
+
+  fetchNotes();
+}
+  };
+
 
   const saveNote = async () => {
     const {
@@ -169,8 +203,23 @@ export default function Dashboard() {
               <p className="text-sm text-gray-600 whitespace-pre-line">
                 {note.content}
               </p>
+
+              {note.summary && (
+                <div className="mt-3 p-3 bg-green-50 border-l-4 border-green-500">
+                  <p className="text-sm text-green-800">
+                    <strong>Summary:</strong> {note.summary}
+                  </p>
+                </div>
+              )}
               
               <div className="mt-4 flex gap-4 text-sm">
+                <button
+                  className="text-green-600 hover:underline"
+                  onClick={() => summarizeNote(note)}
+                >
+                  Summarize
+                </button>
+
                 <button
                   className="text-indigo-600 hover:underline"
                   onClick={() => {
