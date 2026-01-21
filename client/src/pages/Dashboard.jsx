@@ -7,6 +7,7 @@ export default function Dashboard() {
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [labelsInput, setLabelsInput] = useState("");
+  const [filterLabel, setFilterLabel] = useState("");
 
 
   useEffect(() => {
@@ -58,6 +59,18 @@ export default function Dashboard() {
     await supabase.from("notes").delete().eq("id", id);
     fetchNotes();
   };
+
+  const filteredNotes = notes.filter((note) => {
+  if (!filterLabel.trim()) return true;
+
+  return (
+    note.labels &&
+    note.labels.some((label) =>
+      label.toLowerCase().includes(filterLabel.toLowerCase())
+    )
+  );
+});
+
 
   return (
     <div className="min-h-screen w-screen bg-gradient-to-br from-gray-50 to-indigo-50 p-10">
@@ -113,6 +126,16 @@ export default function Dashboard() {
           </button>
         </div>
 
+        <div className="mb-6">
+          <input
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          placeholder="Filter by label (e.g. college)"
+          value={filterLabel}
+          onChange={(e) => setFilterLabel(e.target.value)}
+          />
+        </div>
+
+
         {/* Notes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {notes.length === 0 && (
@@ -121,7 +144,7 @@ export default function Dashboard() {
             </p>
           )}
         <div className="mt-8 space-y-4">
-          {notes.map((note) => (
+          {filteredNotes.map((note) => (
             <div
               key={note.id}
               className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition"
