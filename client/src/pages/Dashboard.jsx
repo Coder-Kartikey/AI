@@ -70,7 +70,7 @@ export default function Dashboard() {
     if (editingId) {
       await supabase
         .from("notes")
-        .update({ title, content, labels: labelsArray })
+        .update({ title, content, labels: labelsArray, updated_at: new Date().toISOString(), })
         .eq("id", editingId);
       setEditingId(null);
     } else {
@@ -79,6 +79,7 @@ export default function Dashboard() {
         content,
         labels: labelsArray,
         user_id: user.id,
+        updated_at: new Date().toISOString(),
       });
     }
 
@@ -198,6 +199,13 @@ export default function Dashboard() {
                 </span>
                 ))}
                 </div>
+              )}
+
+              {note.updated_at && (
+                <p className="text-xs text-gray-500 mt-3">
+                  Last edited:{" "}
+                  {new Date(note.updated_at).toLocaleString()}
+                </p>
               )}
 
               <p className="text-sm text-gray-600 whitespace-pre-line">
