@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { summarizeText } from "../lib/summarize";
+import { Await } from "react-router-dom";
 
 
 export default function Dashboard() {
@@ -10,6 +11,7 @@ export default function Dashboard() {
   const [editingId, setEditingId] = useState(null);
   const [labelsInput, setLabelsInput] = useState("");
   const [filterLabel, setFilterLabel] = useState("");
+  const [selectedNote, setSelectedNote] = useState(null);
 
 
   useEffect(() => {
@@ -108,8 +110,8 @@ export default function Dashboard() {
 
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-gray-50 to-indigo-50 p-10">
-      <div className="bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-indigo-50 p-10">
+      <div className="w-full bg-white rounded-xl shadow-lg p-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -172,13 +174,12 @@ export default function Dashboard() {
 
 
         {/* Notes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {notes.length === 0 && (
             <p className="text-gray-500 text-sm">
               No notes yet. Create your first note above.
             </p>
           )}
-        <div className="mt-8 space-y-4">
           {filteredNotes.map((note) => (
             <div
               key={note.id}
@@ -208,13 +209,13 @@ export default function Dashboard() {
                 </p>
               )}
 
-              <p className="text-sm text-gray-600 whitespace-pre-line">
+              <p className="text-sm text-gray-600 line-clamp-1 whitespace-pre-line">
                 {note.content}
               </p>
 
               {note.summary && (
                 <div className="mt-3 p-3 bg-green-50 border-l-4 border-green-500">
-                  <p className="text-sm text-green-800">
+                  <p className="text-sm text-green-800 line-clamp-1">
                     <strong>Summary:</strong> {note.summary}
                   </p>
                 </div>
@@ -222,8 +223,15 @@ export default function Dashboard() {
               
               <div className="mt-4 flex gap-4 text-sm">
                 <button
+                  className="text-gray-700 hover:underline"
+                  onClick={() => setSelectedNote(note)}
+                >
+                  View
+                </button>
+
+                <button
                   className="text-green-600 hover:underline"
-                  onClick={() => summarizeNote(note)}
+                  onClick={async () => { await summarizeNote(note); await setSelectedNote(note); }}
                 >
                   Summarize
                 </button>
@@ -249,9 +257,64 @@ export default function Dashboard() {
               </div>
             </div>
           ))}
-          </div>
         </div>
       </div>
+      {selectedNote && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div className="bg-white w-full max-w-2xl rounded-lg p-6 shadow-lg relative">
+      
+      {/* Close button */}
+      <button
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+        onClick={() => setSelectedNote(null)}
+      >
+        ✕
+      </button>
+
+      {/* Title */}
+      <h2 className="text-2xl font-bold mb-2">
+        {selectedNote.title}
+      </h2>
+
+      {/* Labels */}
+      {selectedNote.labels && selectedNote.labels.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {selectedNote.labels.map((label, index) => (
+            <span
+              key={index}
+              className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Last edited */}
+      {selectedNote.updated_at && (
+        <p className="text-xs text-gray-500 mb-4">
+          Last edited:{" "}
+          {new Date(selectedNote.updated_at).toLocaleString()}
+        </p>
+      )}
+
+      {/* Full content */}
+      <p className="text-gray-700 whitespace-pre-line mb-4">
+        {selectedNote.content}
+      </p>
+
+      {/* Summary */}
+      {selectedNote.summary && (
+        <div className="p-3 bg-green-50 border-l-4 border-green-500">
+          <p className="text-sm text-green-800">
+            <strong>Summary:</strong> {selectedNote.summary}
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
