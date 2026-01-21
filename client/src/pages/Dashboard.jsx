@@ -6,6 +6,8 @@ export default function Dashboard() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [labelsInput, setLabelsInput] = useState("");
+
 
   useEffect(() => {
     fetchNotes();
@@ -25,22 +27,29 @@ export default function Dashboard() {
       data: { user },
     } = await supabase.auth.getUser();
 
+    const labelsArray = labelsInput
+      .split(",")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
     if (editingId) {
       await supabase
         .from("notes")
-        .update({ title, content })
+        .update({ title, content, labels: labelsArray })
         .eq("id", editingId);
       setEditingId(null);
     } else {
       await supabase.from("notes").insert({
         title,
         content,
+        labels: labelsArray,
         user_id: user.id,
       });
     }
 
     setTitle("");
     setContent("");
+    setLabelsInput("");
     fetchNotes();
   };
 
@@ -80,6 +89,13 @@ export default function Dashboard() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
+          
+          <input
+            className="border p-2 w-full mb-3 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            placeholder="Labels (comma separated)"
+            value={labelsInput}
+            onChange={(e) => setLabelsInput(e.target.value)}
+          />
 
           <textarea
             className="border p-2 w-full mb-4 rounded focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -114,10 +130,23 @@ export default function Dashboard() {
                 {note.title}
               </h3>
 
+              {note.labels && note.labels.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                {note.labels.map((label, index) => (
+                <span
+                  key={index}
+                  className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full"
+                >
+                {label}
+                </span>
+                ))}
+                </div>
+              )}
+
               <p className="text-sm text-gray-600 whitespace-pre-line">
                 {note.content}
               </p>
-
+              
               <div className="mt-4 flex gap-4 text-sm">
                 <button
                   className="text-indigo-600 hover:underline"
@@ -125,6 +154,7 @@ export default function Dashboard() {
                     setEditingId(note.id);
                     setTitle(note.title);
                     setContent(note.content);
+                    setLabelsInput(note.labels ? note.labels.join(", ") : "");
                   }}
                 >
                   Edit
